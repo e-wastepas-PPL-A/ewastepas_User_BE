@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql" // Sesuaikan dengan database Anda
+  url      = env("DATABASE_URL")
+}
+
+model community {
+  community_id     Int                @id @default(autoincrement())
+  name             String             @db.VarChar(50)
+  email            String             @unique(map: "email") @db.VarChar(50)
+  password         String?            @db.VarChar(255)
+  phone            String?            @db.VarChar(15)
+  date_of_birth    DateTime?          @db.Date
+  address          String?            @db.VarChar(255)
+  photo            String?            @db.VarChar(255)
+  is_verified      Boolean?           @default(false)
+  otp_code         String?            @db.VarChar(6)
+  otp_expiry       DateTime?          @db.Timestamp(0)
+  created_at       DateTime?          @default(now()) @db.Timestamp(0)
+  updated_at       DateTime?          @default(now()) @db.Timestamp(0)
+  community_points community_points[]
+}
+
+model community_points {
+  points_id    Int        @id @default(autoincrement())
+  community_id Int?
+  total_points Int?       @default(0)
+  created_at   DateTime?  @default(now()) @db.Timestamp(0)
+  updated_at   DateTime?  @default(now()) @db.Timestamp(0)
+  community    community? @relation(fields: [community_id], references: [community_id], onDelete: Cascade, map: "community_points_ibfk_1")
+
+  @@index([community_id], map: "community_id")
+}

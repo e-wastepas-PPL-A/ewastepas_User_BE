@@ -20,10 +20,11 @@ const forgotPassword = async (req, res) => {
 
     // Membuat token dengan expire 3 menit (180 detik)
     const token = jwt.sign({ email }, process.env.SECRET_KEY, { expiresIn: '3m' });
+    console.log("Token:", token); // Debugging token yang dihasilkan
 
     // Membuat URL reset password dengan token
     const resetUrl = `http://localhost:5173/NewPasswordPage/${token}`;
-    const subject = "Password Reset";
+    const subject = "Password Reset Request";
     const text = `Anda telah meminta untuk mengatur ulang password. Klik link ini untuk mengatur ulang password Anda: ${resetUrl}`;
 
     // Mengirim email menggunakan fungsi sendEmail yang sudah diimpor

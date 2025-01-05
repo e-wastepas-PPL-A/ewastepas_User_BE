@@ -20,6 +20,7 @@ const authenticate = require("../middleware/authenticate"); // Middleware Autent
 const upload = require("../middleware/uploadMiddleware");
 const { PrismaClient } = require("@prisma/client");
 const { contactUs } = require("../controllers/contactUs");
+const { resendPasswordResetEmail } = require("../controllers/resendPasswordReset");
 
 dotenv.config(); // Load variabel lingkungan
 const router = express.Router();
@@ -40,6 +41,7 @@ router.post("/login", login); // Login pengguna
 router.post("/forgot-password", forgotPassword); // Lupa password
 router.post("/reset-password/:email", resetPassword); // Reset password berdasarkan email
 router.post("/contact", contactUs);
+router.post("/resend-email", resendPasswordResetEmail);
 
 // ------------------------- Rute Profil -------------------------
 router.put("/profile", upload.single("photo"), authenticate, updateProfile); // Update profil dengan foto

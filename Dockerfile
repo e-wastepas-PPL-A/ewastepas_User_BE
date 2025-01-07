@@ -17,7 +17,7 @@ COPY . .
 RUN npx prisma generate
 
 # Build app
-RUN npm run build
+# RUN npm run build
 
 # Ekspos port yang digunakan oleh aplikasi (default Express adalah 80 jika diubah pada server.js)
 EXPOSE 3000

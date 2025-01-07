@@ -3,11 +3,11 @@ const jwt = require("jsonwebtoken");
 const { query } = require("../config/db");
 const { OAuth2Client } = require("google-auth-library");
 const { google } = require("googleapis");
-const { sendOtpEmail } = require("../utils/email");
 require("dotenv").config();
+const { sendEmail } = require("../utils/email");
 const { PrismaClient } = require("@prisma/client");
 
-const SECRET_KEY = process.env.SECRET_KEY; // Gunakan SECRET_KEY dari environment
+const SECRET_KEY = process.env.SECRET_KEY; 
 
 const prisma = new PrismaClient();
 
@@ -15,10 +15,10 @@ const prisma = new PrismaClient();
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
   process.env.CLIENT_SECRET,
-  process.env.REDIRECT_URI // Menggunakan REDIRECT_URI dari environment
+  process.env.REDIRECT_URI 
 );
 
-// Fungsi untuk menangani login Google
+// login Google
 const googleLogin = (req, res) => {
   const authorizationUrl = oauth2Client.generateAuthUrl({
     scope: [
@@ -36,7 +36,7 @@ const googleCallback = async (req, res) => {
   const { code } = req.query;
 
   try {
-    // Tukar authorization code dengan token akses
+    // menukar authorization code dengan token akses
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
@@ -52,7 +52,7 @@ const googleCallback = async (req, res) => {
       return res.status(404).json({ error: "Informasi pengguna tidak ada" });
     }
 
-    // Verifikasi ID token (optional)
+    // Verifikasi ID token
     const userPayload = await verifyGoogleToken(tokens.id_token);
 
     // Cek apakah pengguna sudah ada di database
@@ -61,7 +61,7 @@ const googleCallback = async (req, res) => {
     });
 
     if (!user) {
-      // Jika pengguna baru, buat akun baru
+      // Jika pengguna belum ada, buat pengguna baru
       user = await prisma.community.create({
         data: {
           email: data.email,
@@ -70,8 +70,8 @@ const googleCallback = async (req, res) => {
         },
       });
 
-      // Kirimkan email verifikasi atau OTP jika diperlukan
-      await sendOtpEmail(data.email, "Email Verification", "Your OTP is 123456");
+      
+      await sendEmail(data.email, "Email Verification", "Your OTP is 123456");
     }
 
     const payload = {
@@ -80,22 +80,24 @@ const googleCallback = async (req, res) => {
       name: user.name,
     };
 
-    const token = generateJWT(payload); // Generate JWT
-    return res.status(200).json({ message: "Login Berhasil", token: token, user: payload });
+    const token = generateJWT(payload);
+
+    res.redirect(`http://localhost:5173/?token=${token}`);
   } catch (error) {
-    console.error("Error during Google callback:", error);
-    return res.status(500).send("Internal Server Error");
+    console.error("Error during Google callback:", error.message);
+    res.status(500).json({ error: "Failed to handle Google callback" });
   }
 };
 
-// Fungsi untuk verifikasi token Google (optional)
+
+// Fungsi untuk verifikasi token Google
 const verifyGoogleToken = async (id_token) => {
   const client = new OAuth2Client(process.env.CLIENT_ID);
   const ticket = await client.verifyIdToken({
     idToken: id_token,
-    audience: process.env.CLIENT_ID, // Pastikan ini cocok dengan Google client ID dari environment Anda
+    audience: process.env.CLIENT_ID,
   });
-  return ticket.getPayload(); // Mengembalikan payload pengguna dari Google
+  return ticket.getPayload(); 
 };
 
 // Fungsi untuk menghasilkan JWT
@@ -109,7 +111,7 @@ function generateJWT(user) {
   return jwt.sign(payload, process.env.SECRET_KEY, options); // Gunakan SECRET_KEY dari environment
 };
 
-// Ekspor fungsi yang diperlukan
+
 module.exports = {
   googleLogin,
   googleCallback,

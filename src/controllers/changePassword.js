@@ -9,19 +9,19 @@ const changePassword = async (req, res) => {
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
   
     try {
-      // Check if all fields are provided
+    // cek apakah password lama benar
       if (!currentPassword || !newPassword || !confirmNewPassword) {
         return res.status(400).json({ message: "All fields are required" });
       }
   
-      // Check if the new password and confirm password match
+      // cek apakah password baru dan konfirmasi password sama
       if (newPassword !== confirmNewPassword) {
         return res
           .status(400)
           .json({ message: "New password and confirm password must match" });
       }
   
-      // Get the user details from the database
+      // mendapatkan data user berdasarkan email
       const userResult = await getUserByEmail(req.user.email);
       if (userResult.length === 0) {
         return res.status(404).json({ message: "User not found" });
@@ -29,11 +29,11 @@ const changePassword = async (req, res) => {
   
       const user = userResult[0];
   
-      // Debugging: Log the current password and stored hash
+      // debuging password
       console.log("Comparing current password:", currentPassword);
       console.log("Stored password hash:", user.password);
   
-      // Compare the current password with the stored password hash
+      // bandingkan password lama dengan password yang tersimpan
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
         user.password
@@ -44,10 +44,10 @@ const changePassword = async (req, res) => {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
   
-      // Hash the new password
+      // hash password baru
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
   
-      // Update the password in the database
+      // update password di database
       const updatePasswordQuery =
         "UPDATE community SET password = ? WHERE community_id = ?";
       await query(updatePasswordQuery, [hashedNewPassword, user.community_id]);

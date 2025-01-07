@@ -9,7 +9,7 @@ const authRoutes = require("./routes/authRoutes");
 // Middleware CORS
 app.use(
   cors({
-    origin: "http://localhost:5173", // URL frontend Anda
+    origin: "*", // URL frontend Anda
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"], // Metode HTTP yang diizinkan
     credentials: true, // Mengizinkan pengiriman cookies dan kredensial
   })

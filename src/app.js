@@ -20,10 +20,9 @@ app.use(
   cors({
     origin: "http://localhost:5173", // Ganti dengan URL frontend Anda
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    credentials: true,
+    credentials: true, // Izinkan pengiriman cookie lintas domain
   })
 );
-
 
 // Middleware untuk parsing JSON body
 app.use(express.json());
@@ -58,12 +57,9 @@ app.get("/auth/google/callback", async (req, res) => {
     oauthClient.setCredentials(tokens);
 
     // Mendapatkan informasi pengguna dari Google
-    const oauth2 = google.oauth2({
-      auth: oauthClient,
-      version: "v2",
+    const { data } = await axios.get("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
-
-    const { data } = await oauth2.userinfo.get();
 
     // Verifikasi jika data pengguna ada
     if (!data) {
@@ -76,8 +72,16 @@ app.get("/auth/google/callback", async (req, res) => {
       email: data.email,
     });
 
-    // Redirect ke frontend dengan menyertakan token di URL
-    res.redirect(`http://localhost:5173/auth/google/callback?code=${tokens.code}`);
+    // Simpan token JWT di cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, // Gunakan true jika menggunakan HTTPS
+      sameSite: "Strict", // Pastikan disesuaikan dengan kebutuhan (None untuk cross-origin)
+      maxAge: 3600000, // 1 jam
+    });    
+
+    // Redirect ke halaman frontend setelah login berhasil
+    res.redirect("http://localhost:5173/"); // Ganti dengan URL dashboard frontend Anda
   } catch (error) {
     console.error("Error during Google OAuth callback:", error);
     res.status(500).send("Internal Server Error");

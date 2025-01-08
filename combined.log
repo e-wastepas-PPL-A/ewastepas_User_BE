@@ -163,3 +163,17 @@
 {"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 41be03b00d2f7-842abd5920bsm31182985a12.6 - gsmtp"}
 {"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials d9443c01a7336-219dc9716e3sm318211175ad.94 - gsmtp"}
 {"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-72d24fbc1e5sm194667b3a.169 - gsmtp"}
+{"level":"error","message":"Email sudah digunakan"}
+{"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials d9443c01a7336-219dc970cbbsm320784405ad.103 - gsmtp"}
+{"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials d9443c01a7336-219dca02ac2sm320221265ad.272 - gsmtp"}
+{"level":"error","message":"Error: Failed to send email: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-72aad830b05sm34255060b3a.52 - gsmtp"}
+{"level":"error","message":"Error: Failed to send email: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-2f54a34de2dsm699018a91.34 - gsmtp"}
+{"level":"error","message":"Error: sendEmail is not a function"}
+{"level":"error","message":"Error: sendEmail is not a function"}
+{"level":"error","message":"Email sudah digunakan"}
+{"level":"info","message":"Registrasi berhasil!"}
+{"level":"error","message":"Email sudah digunakan"}
+{"level":"info","message":"Registrasi berhasil!"}
+{"level":"error","message":"Email sudah digunakan"}
+{"level":"info","message":"Registrasi berhasil!"}
+{"level":"error","message":"Email sudah digunakan"}

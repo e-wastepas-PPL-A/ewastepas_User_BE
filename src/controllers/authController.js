@@ -1,52 +1,53 @@
-const bcrypt = require("bcryptjs");
+const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
-const { OAuth2Client } = require("google-auth-library");
 const { google } = require("googleapis");
 require("dotenv").config();
-const { sendEmail } = require("../utils/email");
-const { PrismaClient } = require("@prisma/client");
 
-const SECRET_KEY = process.env.SECRET_KEY;
 const prisma = new PrismaClient();
+const { SECRET_KEY, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, FRONTEND_REDIRECT_URL } = process.env;
 
-// Setup OAuth2Client untuk Google OAuth
-const oauth2Client = new google.auth.OAuth2(
-  process.env.CLIENT_ID,
-  process.env.CLIENT_SECRET,
-  process.env.REDIRECT_URI
-);
+const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
 // Fungsi untuk memulai login Google
 const googleLogin = (req, res) => {
-  const authorizationUrl = oauth2Client.generateAuthUrl({
-    scope: [
-      "openid",
-      "https://www.googleapis.com/auth/userinfo.profile",
-      "https://www.googleapis.com/auth/userinfo.email",
-    ],
-    access_type: "offline", // Meminta refresh token
-    prompt: "consent", // Memastikan izin selalu diberikan
-  });
+  try {
+    console.log("Menginisiasi login Google...");
+    const authorizationUrl = oauth2Client.generateAuthUrl({
+      scope: [
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://mail.google.com/",
+      ],
+      access_type: "offline",
+      prompt: "consent",
+    });
 
-  res.redirect(authorizationUrl);
+    console.log("URL otorisasi:", authorizationUrl);
+    res.redirect(authorizationUrl);
+  } catch (error) {
+    console.error("Error during Google login:", error);
+    res.status(500).json({ error: "Gagal memulai login Google", details: error.message });
+  }
 };
 
 // Callback setelah login Google
 const googleCallback = async (req, res) => {
-  const { code } = req.query;
-
-  if (!code) {
-    return res.status(400).json({ error: "Authorization code tidak ditemukan" });
-  }
-
   try {
+    const { code } = req.query;
+
+    if (!code) {
+      console.error("Authorization code tidak ditemukan");
+      return res.status(400).json({ error: "Authorization code tidak ditemukan" });
+    }
+
     console.log("Mendapatkan token dengan kode:", code);
 
     // Tukar authorization code dengan token
     const { tokens } = await oauth2Client.getToken(code);
     console.log("Token yang diterima:", tokens);
 
-    oauth2Client.setCredentials(tokens); // Menyimpan kredensial
+    oauth2Client.setCredentials(tokens);
 
     // Ambil informasi pengguna dari Google
     const oauth2 = google.oauth2({
@@ -58,6 +59,7 @@ const googleCallback = async (req, res) => {
     console.log("Informasi pengguna:", userInfo);
 
     if (!userInfo) {
+      console.error("Informasi pengguna tidak ditemukan");
       return res.status(404).json({ error: "Informasi pengguna tidak tersedia" });
     }
 
@@ -66,48 +68,70 @@ const googleCallback = async (req, res) => {
     console.log("Payload dari token Google:", userPayload);
 
     // Cek apakah pengguna sudah terdaftar
-    let user = await prisma.community.findUnique({
-      where: { email: userInfo.email },
-    });
+    // Cek apakah pengguna sudah terdaftar
+let user = await prisma.community.findUnique({
+  where: { email: userInfo.email },
+});
 
-    if (!user) {
-      // Daftar pengguna baru
-      user = await prisma.community.create({
-        data: {
-          email: userInfo.email,
-          name: userInfo.name,
-          is_verified: true,
-        },
-      });
-    }
+if (!user) {
+  console.log("Pengguna baru, membuat akun...");
+  user = await prisma.community.create({
+    data: {
+      email: userInfo.email,
+      name: userInfo.name,
+      is_verified: true,
+      photo: userInfo.picture,
+      locale: userInfo.locale,
+    },
+  });
+} else {
+  console.log("Pengguna sudah terdaftar, memperbarui refresh token...");
+  if (tokens.refresh_token && user.refresh_token !== tokens.refresh_token) {
+    await prisma.community.update({
+      where: { community_id: user.community_id },
+      data: { refresh_token: tokens.refresh_token },
+    });
+  }
+}
+
 
     // Generate JWT untuk pengguna
-    const token = generateJWT({
-      community_id: user.community_id,
-      email: user.email,
+    const token = generateJWT(user);
+    console.log("JWT yang dihasilkan:", token);
+
+    // Simpan token di cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",  // Hanya aktifkan jika di lingkungan produksi
+      sameSite: "None",  // Untuk memungkinkan cookie digunakan di aplikasi terpisah
+      maxAge: 3600000,  // 1 jam
     });
 
-    // Redirect ke frontend dengan JWT
-    const redirectUrl = process.env.FRONTEND_REDIRECT_URL || "http://localhost:5173/auth/google/callback";
-    return res.redirect(`${redirectUrl}?token=${token}`);
+    // Redirect ke frontend
+    const redirectUrl = FRONTEND_REDIRECT_URL || "http://localhost:5173/auth/google/callback";
+    console.log("Mengalihkan ke URL frontend:", redirectUrl);
+    return res.redirect(redirectUrl);
   } catch (error) {
-    console.error("Error during Google callback:", error.message);
-    return res.status(500).json({ error: "Failed to handle Google callback" });
+    console.error("Error during Google callback:", error);
+    return res.status(500).json({ 
+      error: "Failed to handle Google callback", 
+      details: error.message 
+    });
   }
 };
 
 // Fungsi untuk verifikasi token Google
 const verifyGoogleToken = async (id_token) => {
   try {
-    const client = new OAuth2Client(process.env.CLIENT_ID);
+    const client = new google.auth.OAuth2(CLIENT_ID);
     const ticket = await client.verifyIdToken({
       idToken: id_token,
-      audience: process.env.CLIENT_ID,
+      audience: CLIENT_ID,
     });
     return ticket.getPayload();
   } catch (error) {
-    console.error("Error verifying Google token:", error.message);
-    throw new Error("Invalid Google token");
+    console.error("Error verifying Google token:", error);
+    throw new Error("Invalid Google token: " + error.message);
   }
 };
 
@@ -116,15 +140,37 @@ function generateJWT(user) {
   const payload = {
     community_id: user.community_id,
     email: user.email,
+    iat: Math.floor(Date.now() / 1000),
+    iss: 'E-Whale',
   };
-  const options = { expiresIn: "1h" };
+  const options = { 
+    expiresIn: "1h",
+    algorithm: 'HS256'
+  };
 
   return jwt.sign(payload, SECRET_KEY, options);
 }
 
+// Fungsi logout
+const logout = async (req, res) => {
+  try {
+    // Clear the cookie
+    res.clearCookie('token');
+
+    // Jika Anda memiliki akses ke refresh token pengguna, cabut token tersebut
+    if (req.user && req.user.refresh_token) {
+      await oauth2Client.revokeToken(req.user.refresh_token);
+    }
+
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Error during logout:', error);
+    res.status(500).json({ error: 'Failed to logout' });
+  }
+};
+
 module.exports = {
   googleLogin,
   googleCallback,
-  verifyGoogleToken,
-  generateJWT,
+  logout,
 };

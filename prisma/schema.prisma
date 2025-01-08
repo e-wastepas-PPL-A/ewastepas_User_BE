@@ -9,7 +9,6 @@ datasource db {
 
 model community {
   community_id         Int       @id @default(autoincrement())
-  community_id_google  String?   @unique @db.VarChar(50)  // ID Google sebagai identifier
   name                 String    @db.VarChar(50)
   email                String    @unique(map: "email") @db.VarChar(50)
   password             String?   @db.VarChar(255)

@@ -5,9 +5,9 @@ const prisma = new PrismaClient();
 
 const updateProfile = async (req, res) => {
   try {
-    console.log("Request Body:", req.body); // Debugging input
+    console.log("Request Body:", req.body);
     if (!req.user) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ message: "Pengguna tidak terautentikasi" });
     }
 
     const { name, email, phone, address, date_of_birth } = req.body;
@@ -15,10 +15,10 @@ const updateProfile = async (req, res) => {
 
     // Validasi input
     if (!name || !email || !phone || !address || !date_of_birth) {
-      return res.status(400).json({ message: "All fields must be filled" });
+      return res.status(400).json({ message: "Semua kolom harus diisi" });
     }
 
-    // Mengonversi tanggal menjadi format ISO jika perlu
+    // Mengonversi tanggal ke format ISO
     const formattedDateOfBirth = new Date(date_of_birth).toISOString();
 
     // Tentukan path foto baru jika ada
@@ -27,7 +27,7 @@ const updateProfile = async (req, res) => {
       photoPath = req.file.path;
     }
 
-    // Update user profile using Prisma
+    // Update data profil pengguna
     const updatedUser = await prisma.community.update({
       where: { email: userEmail },
       data: {
@@ -35,12 +35,12 @@ const updateProfile = async (req, res) => {
         email: email || req.user.email,
         phone: phone || req.user.phone,
         address: address || req.user.address,
-        date_of_birth: formattedDateOfBirth || req.user.date_of_birth, // Menggunakan tanggal yang diformat
+        date_of_birth: formattedDateOfBirth || req.user.date_of_birth,
         photo: photoPath,
       },
     });
 
-    // Jika foto diperbarui, hapus foto lama
+    // Jika ada foto yang diupload, hapus foto lama
     if (req.file) {
       const oldPhotoPath = req.user.photo;
       if (oldPhotoPath && fs.existsSync(oldPhotoPath)) {
@@ -48,39 +48,42 @@ const updateProfile = async (req, res) => {
       }
     }
 
-    return res.status(200).json({ message: "Profile updated successfully", user: updatedUser });
+    return res.status(200).json({ message: "Profil berhasil diperbarui", user: updatedUser });
   } catch (error) {
-    console.error("Error updating profile:", error); // Log the error
+    console.error("Error saat memperbarui profil:", error);
     return res.status(500).json({
-      message: "Failed to update profile",
+      message: "Gagal memperbarui profil",
       error: error.message,
     });
   }
 };
 
+
 const getProfile = async (req, res) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ message: "Pengguna tidak terautentikasi" });
     }
 
-    const userEmail = req.user.email; // Menggunakan email dari user yang terautentikasi
+    const userEmail = req.user.email; // Menggunakan email pengguna yang terautentikasi
     const user = await prisma.community.findUnique({
-      where: { email: userEmail },
-    }); // Ambil data user berdasarkan email
+      where: { email: userEmail }, // Mengambil data pengguna berdasarkan email
+    });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "Pengguna tidak ditemukan" });
     }
 
-    return res.status(200).json({ user }); // Mengirimkan data user ke frontend
+    return res.status(200).json({ user }); // Mengirimkan data pengguna ke frontend
   } catch (error) {
-    console.error("Error getting profile:", error);
+    console.error("Error saat mengambil profil:", error);
     return res
       .status(500)
-      .json({ message: "Failed to get profile", error: error.message });
+      .json({ message: "Gagal mengambil profil", error: error.message });
   }
 };
+
+
 
 module.exports = {
   updateProfile,

@@ -18,7 +18,7 @@ const oauthClient = new OAuth2Client(CLIENT_ID);
 // Middleware CORS
 app.use(
   cors({
-    origin: "http://localhost:5173", // Ganti dengan URL frontend Anda
+    origin: "*", // Ganti dengan URL frontend Anda
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true, // Izinkan pengiriman cookie lintas domain
   })

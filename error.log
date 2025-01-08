@@ -81,3 +81,8 @@
 {"level":"error","message":"Error: invalid_grant"}
 {"level":"error","message":"Error: sendOtpEmail is not a function"}
 {"level":"error","message":"Email sudah digunakan"}
+{"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-72aad8db3a8sm35306374b3a.100 - gsmtp"}
+{"level":"error","message":"Email sudah digunakan"}
+{"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials 41be03b00d2f7-842abd5920bsm31182985a12.6 - gsmtp"}
+{"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials d9443c01a7336-219dc9716e3sm318211175ad.94 - gsmtp"}
+{"level":"error","message":"Error: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to\n535 5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-72d24fbc1e5sm194667b3a.169 - gsmtp"}

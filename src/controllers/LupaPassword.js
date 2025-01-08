@@ -1,43 +1,49 @@
 const jwt = require("jsonwebtoken");
-const { query } = require("../config/db");
-const { sendEmail } = require("../utils/email"); // Impor sendEmail
-require("dotenv").config();
+const { sendEmail } = require("../utils/email");
+const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcrypt");
+require("dotenv").config();
+
+const prisma = new PrismaClient();
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
+
   console.log("Forgot password request received for email:", email);
 
   try {
-    // Menggunakan query untuk mencari email di database
-    const results = await query("SELECT * FROM community WHERE email = ?", [email]);
+    // Cek apakah email ada di database menggunakan Prisma
+    const user = await prisma.community.findUnique({
+      where: { email },
+    });
 
-    if (results.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: "Email tidak ditemukan" });
     }
 
     console.log("Email found in database:", email);
 
-    // Membuat token dengan expire 3 menit (180 detik)
-    const token = jwt.sign({ email }, process.env.SECRET_KEY, { expiresIn: '3m' });
-    console.log("Token:", token); // Debugging token yang dihasilkan
+    // Generate token reset password
+    const token = jwt.sign({ email }, process.env.SECRET_KEY, {
+      expiresIn: "3m", // Token valid selama 3 menit
+    });
 
-    // Membuat URL reset password dengan token
     const resetUrl = `http://localhost:5173/NewPasswordPage/${token}`;
-    const subject = "Password Reset Request";
+    const subject = "Password Reset";
     const text = `Anda telah meminta untuk mengatur ulang password. Klik link ini untuk mengatur ulang password Anda: ${resetUrl}`;
 
-    // Mengirim email menggunakan fungsi sendEmail yang sudah diimpor
+    // Kirim email reset password
     await sendEmail(email, subject, text);
 
     res.status(200).json({ message: "Email reset password telah dikirim" });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 };
 
 const resetPassword = async (req, res) => {
-  const { token } = req.params; // Mengambil token dari URL
+  const token = req.params.token;
   const { newPassword } = req.body;
 
   if (!newPassword) {
@@ -49,20 +55,26 @@ const resetPassword = async (req, res) => {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
     if (!decoded || !decoded.email) {
-      return res.status(400).json({ message: "Token tidak valid atau telah kadaluarsa" });
+      return res
+        .status(400)
+        .json({ message: "Token tidak valid atau telah kadaluarsa" });
     }
 
     const email = decoded.email;
 
-    // Enkripsi password baru
+    // Hash password baru
     const hashedPassword = await bcrypt.hash(newPassword, 8);
 
-    // Update password di database
-    await query("UPDATE community SET password = ? WHERE email = ?", [hashedPassword, email]);
+    // Update password di database menggunakan Prisma
+    await prisma.community.update({
+      where: { email },
+      data: { password: hashedPassword },
+    });
 
     res.status(200).json({ message: "Password berhasil diperbarui" });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 };
 

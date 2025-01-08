@@ -17,7 +17,6 @@ const googleLogin = (req, res) => {
         "openid",
         "https://www.googleapis.com/auth/userinfo.profile",
         "https://www.googleapis.com/auth/userinfo.email",
-        "https://mail.google.com/",
       ],
       access_type: "offline",
       prompt: "consent",
@@ -68,32 +67,36 @@ const googleCallback = async (req, res) => {
     console.log("Payload dari token Google:", userPayload);
 
     // Cek apakah pengguna sudah terdaftar
-    // Cek apakah pengguna sudah terdaftar
-let user = await prisma.community.findUnique({
-  where: { email: userInfo.email },
-});
-
-if (!user) {
-  console.log("Pengguna baru, membuat akun...");
-  user = await prisma.community.create({
-    data: {
-      email: userInfo.email,
-      name: userInfo.name,
-      is_verified: true,
-      photo: userInfo.picture,
-      locale: userInfo.locale,
-    },
-  });
-} else {
-  console.log("Pengguna sudah terdaftar, memperbarui refresh token...");
-  if (tokens.refresh_token && user.refresh_token !== tokens.refresh_token) {
-    await prisma.community.update({
-      where: { community_id: user.community_id },
-      data: { refresh_token: tokens.refresh_token },
+    let user = await prisma.community.findUnique({
+      where: { email: userInfo.email },
     });
-  }
-}
 
+    if (!user) {
+      console.log("Pengguna baru, membuat akun...");
+      user = await prisma.community.create({
+        data: {
+          email: userInfo.email,
+          name: userInfo.name,
+          is_verified: true,
+          photo: userInfo.picture,
+          locale: userInfo.locale,
+        },
+      });
+    } else {
+      console.log("Pengguna sudah terdaftar, memperbarui data pengguna...");
+
+      // Update hanya jika ada perubahan yang signifikan
+      const updateData = {};
+      if (user.name !== userInfo.name) updateData.name = userInfo.name;
+      if (user.photo !== userInfo.picture) updateData.photo = userInfo.picture;
+      
+      if (Object.keys(updateData).length > 0) {
+        await prisma.community.update({
+          where: { community_id: user.community_id },
+          data: updateData,
+        });
+      }
+    }
 
     // Generate JWT untuk pengguna
     const token = generateJWT(user);
@@ -108,14 +111,14 @@ if (!user) {
     });
 
     // Redirect ke frontend
-    const redirectUrl = FRONTEND_REDIRECT_URL || "http://localhost:5173/auth/google/callback";
+    const redirectUrl = FRONTEND_REDIRECT_URL || `http://localhost:5173/auth/google/callback?token=${token}`;
     console.log("Mengalihkan ke URL frontend:", redirectUrl);
     return res.redirect(redirectUrl);
   } catch (error) {
     console.error("Error during Google callback:", error);
-    return res.status(500).json({ 
-      error: "Failed to handle Google callback", 
-      details: error.message 
+    return res.status(500).json({
+      error: "Failed to handle Google callback",
+      details: error.message
     });
   }
 };

@@ -1,11 +1,9 @@
 const bcrypt = require('bcrypt');
 const Joi = require("joi");
 const crypto = require("crypto");
-const { PrismaClient } = require("@prisma/client");
 const { sendEmail } = require("../utils/email");
 const winston = require("winston");
-
-const prisma = new PrismaClient();
+const { getUserByEmail } = require('../models/user'); // Ensure the path is correct
 
 const logger = winston.createLogger({
   level: "info",
@@ -21,7 +19,7 @@ const register = async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
 
-    // Validasi input dengan Joi
+    // Validate input with Joi
     const schema = Joi.object({
       name: Joi.string().min(3).required(),
       email: Joi.string().email().required(),
@@ -34,25 +32,25 @@ const register = async (req, res) => {
 
     const { error } = schema.validate(req.body);
     if (error) {
-      logger.error(`Error validasi: ${error.details[0].message}`);
+      logger.error(`Validation error: ${error.details[0].message}`);
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    // Cek apakah email sudah terdaftar
-    const existingUser = await prisma.community.findUnique({ where: { email } });
+    // Check if the email is already registered using the function
+    const existingUser = await getUserByEmail(email);
     if (existingUser) {
-      logger.error("Email sudah terdaftar");
-      return res.status(400).json({ message: "Email sudah terdaftar" });
+      logger.error("Email already registered");
+      return res.status(400).json({ message: "Email already registered" });
     }
 
-    // Hash password pengguna
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Generate OTP
     const otp = crypto.randomInt(100000, 999999).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-    // Daftarkan pengguna baru
+    // Register new user
     await prisma.community.create({
       data: {
         name,
@@ -64,16 +62,15 @@ const register = async (req, res) => {
       },
     });
 
-    // Kirim OTP via email
-    await sendEmail(email, "Kode OTP Anda", `Kode OTP Anda adalah: ${otp}`);
+    // Send OTP via email
+    await sendEmail(email, "Your OTP Code", `Your OTP code is: ${otp}`);
 
-    logger.info("Registrasi berhasil!");
-    res.status(201).json({ message: "Registrasi berhasil! OTP telah dikirim ke email." });
+    logger.info("Registration successful!");
+    res.status(201).json({ message: "Registration successful! OTP has been sent to your email." });
   } catch (err) {
     logger.error(`Error: ${err.message}`);
-    res.status(500).json({ message: "Terjadi kesalahan pada server.", error: err.message });
+    res.status(500).json({ message: "Server error occurred.", error: err.message });
   }
 };
-
 
 module.exports = { register };

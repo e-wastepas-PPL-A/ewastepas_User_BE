@@ -15,15 +15,6 @@ const authRoutes = require("./routes/authRoutes");
 const CLIENT_ID = process.env.CLIENT_ID;  // Mengambil dari file .env
 const oauthClient = new OAuth2Client(CLIENT_ID);
 
-// Middleware CORS
-app.use(
-  cors({
-    origin: "*", // Ganti dengan URL frontend Anda
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    credentials: true, // Izinkan pengiriman cookie lintas domain
-  })
-);
-
 // Middleware untuk parsing JSON body
 app.use(express.json());
 

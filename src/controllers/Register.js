@@ -7,6 +7,7 @@ const { getUserByEmail } = require('../models/user'); // Ensure the path is corr
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
+
 const logger = winston.createLogger({
   level: "info",
   format: winston.format.json(),

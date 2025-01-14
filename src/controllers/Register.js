@@ -4,7 +4,9 @@ const crypto = require("crypto");
 const { sendEmail } = require("../utils/email");
 const winston = require("winston");
 const { getUserByEmail } = require('../models/user'); // Ensure the path is correct
+const { PrismaClient } = require("@prisma/client");
 
+const prisma = new PrismaClient();
 const logger = winston.createLogger({
   level: "info",
   format: winston.format.json(),

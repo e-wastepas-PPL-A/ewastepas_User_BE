@@ -1,25 +1,20 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const db = require("../config/db"); 
 
-// Fungsi untuk menambahkan pengguna baru
-const createUser = async (name, email, phone, address, photo, date_of_birth) => {
-  try {
-    return await prisma.community.create({
-      data: {
-        name,
-        email,
-        phone,
-        address,
-        photo,
-        date_of_birth,
-      },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
+const createUser = async (
+  name,
+  email,
+  phone,
+  address,
+  photo,
+  date_of_birth
+) => {
+  const sql =
+    "INSERT INTO community (name, email, phone, address, photo, date_of_birth) VALUES (?, ?, ?, ?, ?, ?)";
+  const params = [name, email, phone, address, photo, date_of_birth];
+  return db.query(sql, params);
 };
 
-// Fungsi untuk memperbarui profil pengguna
+
 const updateUserProfile = async (
   community_id,
   name,
@@ -29,58 +24,42 @@ const updateUserProfile = async (
   photo,
   date_of_birth
 ) => {
-  try {
-    return await prisma.community.update({
-      where: { community_id },
-      data: {
-        name,
-        email,
-        phone,
-        address,
-        photo,
-        date_of_birth,
-      },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  const sql =
+    "UPDATE community SET name = ?, email = ?, phone = ?, address = ?, photo = ?, date_of_birth = ? WHERE community_id = ?";
+  const params = [
+    name,
+    email,
+    phone,
+    address,
+    photo,
+    date_of_birth,
+    community_id,
+  ];
+  return db.query(sql, params);
 };
 
-// Fungsi untuk mengambil data pengguna berdasarkan ID
+
 const getUserById = async (id) => {
-  try {
-    return await prisma.community.findUnique({
-      where: { community_id: id },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  const sql = "SELECT * FROM community WHERE community_id = ?";
+  const params = [id];
+  return db.query(sql, params);
 };
 
-// Fungsi untuk mendapatkan pengguna berdasarkan email (untuk login)
+
 const getUserByEmail = async (email) => {
-  try {
-    return await prisma.community.findUnique({
-      where: { email },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  const sql = "SELECT * FROM community WHERE email = ?";
+  const params = [email];
+  return db.query(sql, params);
 };
 
-// Fungsi untuk memeriksa apakah email sudah terdaftar
+
 const isEmailExist = async (email) => {
-  try {
-    const user = await prisma.community.findUnique({
-      where: { email },
-    });
-    return user !== null;
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  const sql = "SELECT * FROM community WHERE email = ?";
+  const params = [email];
+  return db.query(sql, params);
 };
 
-// Export semua fungsi untuk digunakan di controller
+
 module.exports = {
   createUser,
   updateUserProfile,

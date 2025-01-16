@@ -1,16 +1,11 @@
 const { sendEmail } = require("../utils/email");
 require("dotenv").config();
 
-
 const contactUs = async (req, res) => {
   const { name, contact, email, message } = req.body;
-
-  // Validasi input
   if (!name || !contact || !email || !message) {
     return res.status(400).json({ error: "Semua data harus diisi" });
   }
-
-  // Format email yang akan dikirim
   const subject = "Pesan Baru dari Form Kontak";
   const text = `
     Anda menerima pesan baru dari form kontak:

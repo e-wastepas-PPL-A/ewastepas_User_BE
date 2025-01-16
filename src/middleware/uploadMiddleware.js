@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 
-// Menyimpan file di folder 'uploads' dengan nama yang unik
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads/');
